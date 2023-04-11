@@ -15,6 +15,7 @@
  *******************************************************************************/
 
 import {bls12_381} from '@noble/curves/bls12-381';
+import {G1Encode, G2Encode} from './curve';
 
 export type G1Point = typeof bls12_381.G1.ProjectivePoint.BASE
 export type G2Point = typeof bls12_381.G2.ProjectivePoint.BASE
@@ -41,7 +42,8 @@ export class PrivateKey {
   }
 
   public getEncodedPublicKeyG1(): Uint8Array {
-    return this.getPublicKeyG1().toRawBytes(true);
+    const temp = this.getPublicKeyG1();
+    return G1Encode(temp);
   }
 
   public getPublicKeyG2(): G2Point {
@@ -49,7 +51,8 @@ export class PrivateKey {
   }
 
   public getEncodedPublicKeyG2(): Uint8Array {
-    return this.getPublicKeyG2().toRawBytes(true);
+    const temp = this.getPublicKeyG2();
+    return G2Encode(temp);
   }
 
   static fromBytes(input: Uint8Array): PrivateKey {

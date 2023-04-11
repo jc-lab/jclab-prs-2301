@@ -22,8 +22,9 @@ import {
   G2Point,
   PrivateKey
 } from './key';
+import {G2Decode, G2Encode} from './curve';
 
-const z = bls12_381.pairing(bls12_381.G1.ProjectivePoint.BASE, bls12_381.G2.ProjectivePoint.BASE);
+const z = bls12_381.pairing(bls12_381.G1.ProjectivePoint.BASE, bls12_381.G2.ProjectivePoint.BASE, true);
 
 function hashFr(a: Uint8Array): bigint {
   const hash = sha256.create();
@@ -41,13 +42,13 @@ export class Signature1 {
   }
 
   public encode(): Uint8Array {
-    return Buffer.concat([this.r.toRawBytes(true), bls12_381.Fr.toBytes(this.s)]);
+    return Buffer.concat([G2Encode(this.r), bls12_381.Fr.toBytes(this.s)]);
   }
 
   static decode(input: Uint8Array): Signature1 {
-    const r = input.slice(0, 96);
-    const s = input.slice(96);
-    return new Signature1(bls12_381.G2.ProjectivePoint.fromHex(r), bls12_381.Fr.fromBytes(s));
+    const r = input.slice(0, 97);
+    const s = input.slice(97);
+    return new Signature1(G2Decode(r), bls12_381.Fr.fromBytes(s));
   }
 }
 
@@ -61,13 +62,13 @@ export class Signature2 {
   }
 
   public encode(): Uint8Array {
-    return Buffer.concat([this.r.toRawBytes(true), this.s.toRawBytes(true)]);
+    return Buffer.concat([G2Encode(this.r), G2Encode(this.s)]);
   }
 
   static decode(input: Uint8Array): Signature2 {
-    const r = input.slice(0, 96);
-    const s = input.slice(96);
-    return new Signature2(bls12_381.G2.ProjectivePoint.fromHex(r), bls12_381.G2.ProjectivePoint.fromHex(s));
+    const r = input.slice(0, 97);
+    const s = input.slice(97);
+    return new Signature2(G2Decode(r), G2Decode(s));
   }
 }
 
@@ -96,18 +97,19 @@ export function reSign(resignKey: G2Point, signature: Signature1): Signature2 {
 
 export function firstVerify(publicKey: G1Point, signature: Signature1, message: Uint8Array): boolean {
   const h = hashFr(message);
-  const v1 = bls12_381.pairing(publicKey, bls12_381.G2.ProjectivePoint.BASE.multiply(signature.s)); // z^(k + h)
+  const g2s = bls12_381.G2.ProjectivePoint.BASE.multiply(signature.s);
+  const v1 = bls12_381.pairing(publicKey, g2s, true); // z^(k + h)
   const v2_a = bls12_381.Fp12.pow(z, h); // z^h
-  const v2_b = bls12_381.pairing(bls12_381.G1.ProjectivePoint.BASE, signature.r); // z^k
+  const v2_b = bls12_381.pairing(bls12_381.G1.ProjectivePoint.BASE, signature.r, true); // z^k
   const v2 = bls12_381.Fp12.mul(v2_a, v2_b);
   return bls12_381.Fp12.eql(v1, v2);
 }
 
 export function verify(publicKey: G1Point, signature: Signature2, message: Uint8Array): boolean {
   const h = hashFr(message);
-  const v1 = bls12_381.pairing(publicKey, signature.s);
+  const v1 = bls12_381.pairing(publicKey, signature.s, true);
   const v2_a = bls12_381.Fp12.pow(z, h); // z^h
-  const v2_b = bls12_381.pairing(bls12_381.G1.ProjectivePoint.BASE, signature.r); // z^k
+  const v2_b = bls12_381.pairing(bls12_381.G1.ProjectivePoint.BASE, signature.r, true); // z^k
   const v2 = bls12_381.Fp12.mul(v2_a, v2_b);
   return bls12_381.Fp12.eql(v1, v2);
 }

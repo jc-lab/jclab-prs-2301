@@ -11,11 +11,11 @@ describe('PrivateKey', function () {
   });
 
   it('getEncodedPublicKeyG1', () => {
-    expect(Buffer.from(sample.getEncodedPublicKeyG1()).toString('hex')).toEqual('86e50ce24f93cd9d36db6f8f73bea8fe2c916d46662800f7148ca6b137e23afce41d0c3fcc27dbfb2bd6d3c297e3eb95');
+    expect(Buffer.from(sample.getEncodedPublicKeyG1()).toString('hex')).toEqual('0306e50ce24f93cd9d36db6f8f73bea8fe2c916d46662800f7148ca6b137e23afce41d0c3fcc27dbfb2bd6d3c297e3eb95');
   });
 
   it('getEncodedPublicKeyG2', () => {
-    expect(Buffer.from(sample.getEncodedPublicKeyG2()).toString('hex')).toEqual('90a1c1bea6fc02ed9448520f88575108f26fa4d40b88645c5c3479d4fc30b5c7f4121e61dbf95fd5477e8fa2d02449d5068bda9acae70ae6d7bc98694cf5edb13869a449b4a8d48dfef9199fbea4f5fd0d80381b967e497956672b3f4fa868ee');
+    expect(Buffer.from(sample.getEncodedPublicKeyG2()).toString('hex')).toEqual('0310a1c1bea6fc02ed9448520f88575108f26fa4d40b88645c5c3479d4fc30b5c7f4121e61dbf95fd5477e8fa2d02449d5068bda9acae70ae6d7bc98694cf5edb13869a449b4a8d48dfef9199fbea4f5fd0d80381b967e497956672b3f4fa868ee');
   });
 
   it('getBytes-fromBytes', () => {

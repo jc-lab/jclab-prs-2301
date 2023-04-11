@@ -1,7 +1,5 @@
 package engine
 
-import "go.bryk.io/miracl/core"
-
 type KeyPair struct {
 	S  []byte // private
 	W1 []byte // public G1
@@ -18,7 +16,11 @@ type Signature2 struct {
 	S []byte
 }
 
+type Rand = func() byte
+
 type CurveEngine interface {
+	SetRandomProvider(rand Rand)
+
 	GetBGS() int
 	GetBFS() int
 	GetG1S() int
@@ -28,7 +30,7 @@ type CurveEngine interface {
 
 	KeyPairFromBytes(S []byte) (*KeyPair, error)
 	KeyPairGenerateIKM(IKM []byte) (*KeyPair, error)
-	KeyPairGenerate(rng *core.RAND) (*KeyPair, error)
+	KeyPairGenerate() (*KeyPair, error)
 	GeneratePublicKey(S []byte) ([]byte, error)
 
 	Sign(M []byte, S []byte) (*Signature1, error)

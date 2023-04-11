@@ -1,25 +1,45 @@
 package engine
 
 import (
+	"crypto/rand"
 	"go.bryk.io/miracl/core"
 	"go.bryk.io/miracl/core/BLS12381"
 )
 
 type CurveEngineBls12381Impl struct {
 	CurveEngine
-	z *BLS12381.FP12
+	z    *BLS12381.FP12
+	rand Rand
 }
 
 func ceil(a int, b int) int {
 	return (((a)-1)/(b) + 1)
 }
 
-func NewBLS12381Engine() *CurveEngineBls12381Impl {
+func NewBLS12381Engine() (*CurveEngineBls12381Impl, error) {
 	z := BLS12381.Ate(BLS12381.ECP2_generator(), BLS12381.ECP_generator())
 	z = BLS12381.Fexp(z)
-	return &CurveEngineBls12381Impl{
-		z: z,
+
+	r := core.NewRAND()
+
+	buf := make([]byte, 1024)
+	if _, err := rand.Read(buf); err != nil {
+		return nil, err
 	}
+	r.Seed(len(buf), buf)
+
+	rf := func() byte {
+		return r.GetByte()
+	}
+
+	return &CurveEngineBls12381Impl{
+		z:    z,
+		rand: rf,
+	}, nil
+}
+
+func (e *CurveEngineBls12381Impl) SetRandomProvider(rand Rand) {
+	e.rand = rand
 }
 
 func (e *CurveEngineBls12381Impl) GetBGS() int {
@@ -50,13 +70,6 @@ func (e *CurveEngineBls12381Impl) BIGCurveOrder() *BLS12381.BIG {
 	return BLS12381.NewBIGints(BLS12381.CURVE_Order)
 }
 
-func (e *CurveEngineBls12381Impl) BIGFromTrimmedBytes(data []byte) *BLS12381.BIG {
-	buffer := make([]byte, BLS12381.BGS)
-	prefix := len(buffer) - len(data)
-	copy(buffer[prefix:], data)
-	return BLS12381.FromBytes(buffer)
-}
-
 func (e *CurveEngineBls12381Impl) BIGToTrimmedBytes(big *BLS12381.BIG) []byte {
 	buffer := make([]byte, BLS12381.BGS)
 	size := big.Nbits()
@@ -72,15 +85,12 @@ func (e *CurveEngineBls12381Impl) BIGToTrimmedBytes(big *BLS12381.BIG) []byte {
 
 func (e *CurveEngineBls12381Impl) KeyPairFromBytes(S []byte) (*KeyPair, error) {
 	kp := &KeyPair{
-		S:  make([]byte, e.GetBGS()),
 		W1: make([]byte, e.GetG1S()),
 		W2: make([]byte, e.GetG2S()),
 	}
 
-	r := e.BIGCurveOrder()
-	s2 := BLS12381.DBIG_fromBytes(S)
-	s := s2.Mod(r)
-	s.ToBytes(kp.S)
+	s := e.decodePrivateKey(S)
+	kp.S = e.BIGToTrimmedBytes(s)
 
 	G1 := BLS12381.ECP_generator()
 	G2 := BLS12381.ECP2_generator()
@@ -110,11 +120,11 @@ func (e *CurveEngineBls12381Impl) KeyPairGenerateIKM(IKM []byte) (*KeyPair, erro
 	return e.KeyPairFromBytes(OKM)
 }
 
-func (e *CurveEngineBls12381Impl) KeyPairGenerate(rng *core.RAND) (*KeyPair, error) {
+func (e *CurveEngineBls12381Impl) KeyPairGenerate() (*KeyPair, error) {
 	var IKM [64]byte
 
 	for i := 0; i < len(IKM); i++ {
-		IKM[i] = rng.GetByte()
+		IKM[i] = e.rand()
 	}
 
 	return e.KeyPairGenerateIKM(IKM[:])
@@ -133,9 +143,10 @@ func (e *CurveEngineBls12381Impl) PrsResigningKey(SignerW2 []byte, ReSignerS []b
 	r := e.BIGCurveOrder()
 
 	G2 := BLS12381.ECP2_fromBytes(SignerW2)
-	s := BLS12381.FromBytes(ReSignerS)
-
+	s2 := BLS12381.DBIG_fromBytes(ReSignerS)
+	s := s2.Mod(r)
 	s.Invmodp(r)
+
 	RK := BLS12381.G2mul(G2, s)
 
 	buf := make([]byte, e.GetG2S())
@@ -157,6 +168,10 @@ func (e *CurveEngineBls12381Impl) Sign(M []byte, S []byte) (*Signature1, error) 
 	r := e.BIGCurveOrder()
 
 	kBuf := make([]byte, 32)
+	for i := 0; i < 32; i++ {
+		kBuf[i] = e.rand()
+	}
+
 	k := BLS12381.FromBytes(kBuf)
 	k.Mod(r)
 
@@ -165,7 +180,7 @@ func (e *CurveEngineBls12381Impl) Sign(M []byte, S []byte) (*Signature1, error) 
 	rQ := BLS12381.ECP2_generator()
 	rQ = BLS12381.G2mul(rQ, k)
 
-	privKey := BLS12381.FromBytes(S)
+	privKey := e.decodePrivateKey(S)
 	privKey.Invmodp(r)
 	s := BLS12381.Modmul(privKey, k.Plus(h), r)
 
@@ -261,4 +276,9 @@ func (e *CurveEngineBls12381Impl) Signature2FromBytes(data []byte) *Signature2 {
 	copy(result.R, data[:len(result.R)])
 	copy(result.S, data[len(result.R):])
 	return result
+}
+
+func (e *CurveEngineBls12381Impl) decodePrivateKey(S []byte) *BLS12381.BIG {
+	s2 := BLS12381.DBIG_fromBytes(S)
+	return s2.Mod(e.BIGCurveOrder())
 }

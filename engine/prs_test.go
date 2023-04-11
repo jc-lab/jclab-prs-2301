@@ -4,25 +4,24 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"go.bryk.io/miracl/core"
 	"testing"
 	"time"
 )
 
 func Test_BLS12381_ReproducibleCase(t *testing.T) {
-	e := NewBLS12381Engine()
+	e, _ := NewBLS12381Engine()
 
 	bytes, _ := hex.DecodeString("1282a07a980e79ac66b81c6c9f22cf3544fac7f7ddc473e178646d58a88c0c4f")
 	aliceKey, _ := e.KeyPairFromBytes(bytes)
 
-	assert.Equal(t, hex.EncodeToString(aliceKey.S), "000000000000000000000000000000001282a07a980e79ac66b81c6c9f22cf3544fac7f7ddc473e178646d58a88c0c4f")
+	assert.Equal(t, hex.EncodeToString(aliceKey.S), "1282a07a980e79ac66b81c6c9f22cf3544fac7f7ddc473e178646d58a88c0c4f")
 	assert.Equal(t, hex.EncodeToString(aliceKey.W1), "0213fa33245c2b8155804330a84f065895830395df57b47887788d82d6ec82dbc0fdabcd3dd9f0fd7aa3bf9b68be3605df")
 	assert.Equal(t, hex.EncodeToString(aliceKey.W2), "03026be1458932fb271f53ae9c41eacbbd739362d8ac2fba3d32d7c0935f186a55bed16661491d38493e466e321f4a97f00cd982e56976360d8fd03516658b6262ff1bf8c7d9a7b1d5478da438769d37fb53ac50f63477ead0216f1d78b4f8a889")
 
 	bytes, _ = hex.DecodeString("341340255f876d1c446080f77ff44ec0518014776cd292df2901a63dd6df7f53")
 	bobKey, _ := e.KeyPairFromBytes(bytes)
 
-	assert.Equal(t, hex.EncodeToString(bobKey.S), "00000000000000000000000000000000341340255f876d1c446080f77ff44ec0518014776cd292df2901a63dd6df7f53")
+	assert.Equal(t, hex.EncodeToString(bobKey.S), "341340255f876d1c446080f77ff44ec0518014776cd292df2901a63dd6df7f53")
 	assert.Equal(t, hex.EncodeToString(bobKey.W1), "0306d5b0d11004f2b12f9beac4fb5b02e671ba96bb638af174a55bc1904c62b05588a7e2bc37c1a123075f8308c463c391")
 	assert.Equal(t, hex.EncodeToString(bobKey.W2), "0300c54b72b75ea321b54e072d122338d019710e57dd30234bcc3624dffb4be75b4a1adecc924aada34f655f8c33147fff0790ad1ae160196688c2cf4fe3e7a82d578d00e1bf3da77c85d91f793203d6778eb9957000c2a1469d5a04504e53fd7f")
 
@@ -48,11 +47,9 @@ func Test_BLS12381_ReproducibleCase(t *testing.T) {
 }
 
 func Test_BLS12381_Random(t *testing.T) {
-	e := NewBLS12381Engine()
+	e, _ := NewBLS12381Engine()
 
 	message := []byte("HELLO WORLD")
-
-	random := core.NewRAND()
 
 	totalKeyPairGen := int64(0)
 	totalReSignKey := int64(0)
@@ -64,12 +61,24 @@ func Test_BLS12381_Random(t *testing.T) {
 	iterations := 10
 	for i := 0; i < iterations; i++ {
 		start := time.Now()
-		alice, _ := e.KeyPairGenerate(random)
-		bob, _ := e.KeyPairGenerate(random)
+		alice, err := e.KeyPairGenerate()
+		if err != nil {
+			t.Fatal(err)
+		}
+		bob, err := e.KeyPairGenerate()
+		if err != nil {
+			t.Fatal(err)
+		}
 		totalKeyPairGen += time.Since(start).Milliseconds()
 
-		alice2, _ := e.KeyPairFromBytes(alice.S)
-		bob2, _ := e.KeyPairFromBytes(bob.S)
+		alice2, err := e.KeyPairFromBytes(alice.S)
+		if err != nil {
+			t.Fatal(err)
+		}
+		bob2, err := e.KeyPairFromBytes(bob.S)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		assert.Equal(t, alice.S, alice2.S)
 		assert.Equal(t, alice.W1, alice2.W1)
@@ -80,12 +89,18 @@ func Test_BLS12381_Random(t *testing.T) {
 		assert.Equal(t, bob.W2, bob2.W2)
 
 		start = time.Now()
-		rekey, _ := e.PrsResigningKey(alice.W2, bob.S)
+		rekey, err := e.PrsResigningKey(alice.W2, bob.S)
 		totalReSignKey += time.Since(start).Milliseconds()
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		start = time.Now()
-		s1, _ := e.Sign(message, alice.S)
+		s1, err := e.Sign(message, alice.S)
 		totalSign += time.Since(start).Milliseconds()
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		start = time.Now()
 		r := e.FirstVerify(s1, message, alice.W1)

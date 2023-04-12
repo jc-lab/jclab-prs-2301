@@ -30,6 +30,13 @@ import {
   verify
 } from './prs';
 
+import {
+  G1Encode,
+  G1Decode,
+  G2Encode,
+  G2Decode
+} from './curve';
+
 export {
   G1Point,
   G2Point,
@@ -40,5 +47,9 @@ export {
   firstSign,
   reSign,
   firstVerify,
-  verify
+  verify,
+  G1Encode,
+  G1Decode,
+  G2Encode,
+  G2Decode
 };

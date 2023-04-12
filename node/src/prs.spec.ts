@@ -1,5 +1,5 @@
 import {
-  firstSign, firstVerify, generateResignKey,
+  firstSign, firstVerify, G2Decode, generateResignKey,
   PrivateKey, reSign, Signature1, verify
 } from './index';
 import {G2Encode} from './curve';
@@ -20,7 +20,10 @@ describe('proxy-re-signature test', function () {
     expect(Buffer.from(bob.getEncodedPublicKeyG1()).toString('hex')).toEqual('0306d5b0d11004f2b12f9beac4fb5b02e671ba96bb638af174a55bc1904c62b05588a7e2bc37c1a123075f8308c463c391');
     expect(Buffer.from(bob.getEncodedPublicKeyG2()).toString('hex')).toEqual('0300c54b72b75ea321b54e072d122338d019710e57dd30234bcc3624dffb4be75b4a1adecc924aada34f655f8c33147fff0790ad1ae160196688c2cf4fe3e7a82d578d00e1bf3da77c85d91f793203d6778eb9957000c2a1469d5a04504e53fd7f');
 
-    expect(Buffer.from(G2Encode(rk)).toString('hex')).toEqual('030ac31b09847297f28cadb0fe88707553e7e9e041010c3d1ad3067c601506f4819f55da80bcd84cecc7508d73d9b89f0215464449b04275fa35752d6a3f8c571228371683004c0b164045b7b460c90db0b88387b895c80fa2e010af8ab5aecced');
+    const rkEncoded = G2Encode(rk);
+    expect(Buffer.from(rkEncoded).toString('hex')).toEqual('030ac31b09847297f28cadb0fe88707553e7e9e041010c3d1ad3067c601506f4819f55da80bcd84cecc7508d73d9b89f0215464449b04275fa35752d6a3f8c571228371683004c0b164045b7b460c90db0b88387b895c80fa2e010af8ab5aecced');
+    const rkDecoded = G2Decode(rkEncoded);
+    expect(rkDecoded.toHex(true)).toEqual(rk.toHex(true));
 
     const s1 = Signature1.decode(Buffer.from('0209e3164cfe2b5dd8839d0a12d2ddc2b48c9402d103a021163c547d7099ab7d08bd74980c8d330ab0532bc93d6485815a00604536cf702d563c3b1fcd7efba451edcfd67376fed216f4c6994cd01063a817730eae7af863956482817b11f5372607b5cf944cf636cfb4f681d508aa4b01a66fe11f8f1115a9ed6b1c3656c2bab3', 'hex'));
     const verified = firstVerify(alice.getPublicKeyG1(), s1, message);

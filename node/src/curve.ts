@@ -27,8 +27,10 @@ export function G1Decode(bytes: Uint8Array): G1Point {
     let y = bls12_381.Fp.sqrt(right);
     if (!y) throw new Error('Invalid compressed G1 point');
 
-    const aflag = isCompressedOdd ? 1n : 0n;
-    if ((y * 2n) / bls12_381.Fp.ORDER !== aflag) y = bls12_381.Fp.neg(y);
+    if (isCompressedOdd != bls12_381.Fp.isOdd!(y)) {
+      y = bls12_381.Fp.neg(y);
+    }
+
     return new bls12_381.G1.ProjectivePoint(x, y, bls12_381.Fp.ONE);
   }
   throw new Error('invalid signature: ' + first.toString(16));

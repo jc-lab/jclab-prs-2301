@@ -12,6 +12,10 @@
     "test:node": "jest --ci --config jest.config.js",
     "test:browser": "jest --ci --config jest-browser.config.js --env=./test/browser-env.js"
   },
+  "files": [
+    "lib",
+    "LICENSE"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jc-lab/jclab-prs-2301.git"

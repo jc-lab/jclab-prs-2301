@@ -35,11 +35,11 @@ type CurveEngine interface {
 
 	Sign(M []byte, S []byte) (*Signature1, error)
 	FirstVerify(sig *Signature1, M []byte, W []byte) bool
-	//Verify(sig *Signature2, M []byte, W []byte) int
+	Verify(sig *Signature2, M []byte, W []byte) bool
 
 	Signature1FromBytes(data []byte) *Signature1
 	Signature2FromBytes(data []byte) *Signature2
 
-	//PrsResigningKey(SignerW2 []byte, ReSignerS []byte) ([]byte, error)
-	//PrsResign(inSig *Signature1, RK []byte) (*Signature2, error)
+	PrsResigningKey(SignerW2 []byte, ReSignerS []byte) ([]byte, error)
+	PrsResign(inSig *Signature1, RK []byte) (*Signature2, error)
 }

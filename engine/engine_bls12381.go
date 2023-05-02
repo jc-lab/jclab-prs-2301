@@ -131,10 +131,10 @@ func (e *CurveEngineBls12381Impl) KeyPairGenerate() (*KeyPair, error) {
 }
 
 func (e *CurveEngineBls12381Impl) GeneratePublicKey(S []byte) ([]byte, error) {
-	s := BLS12381.FromBytes(S)
+	s := e.decodePrivateKey(S)
 	G := BLS12381.ECP_generator()
 	G = BLS12381.G1mul(G, s)
-	W := make([]byte, e.GetG2S())
+	W := make([]byte, e.GetG1S())
 	G.ToBytes(W, true)
 	return W, nil
 }

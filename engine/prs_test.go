@@ -46,6 +46,17 @@ func Test_BLS12381_ReproducibleCase(t *testing.T) {
 	assert.True(t, r)
 }
 
+func Test_BLS12381_GeneratePublicKey(t *testing.T) {
+	e, _ := NewBLS12381Engine()
+	kp, err := e.KeyPairGenerate()
+	if err != nil {
+		assert.Error(t, err)
+	}
+	generatedW1, err := e.GeneratePublicKey(kp.S)
+
+	assert.Equal(t, kp.W1, generatedW1)
+}
+
 func Test_BLS12381_Random(t *testing.T) {
 	e, _ := NewBLS12381Engine()
 

@@ -76,8 +76,8 @@ func (e *CurveEngineBls12381Impl) BIGToTrimmedBytes(big *BLS12381.BIG) []byte {
 	temp := size % 8
 	if temp > 0 {
 		size += 8 - temp
-		size /= 8
 	}
+	size /= 8
 	big.ToBytes(buffer)
 	prefix := len(buffer) - size
 	return buffer[prefix:]
